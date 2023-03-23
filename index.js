@@ -1,27 +1,34 @@
-const express = require("express");
-const cors = require("cors");
+import WebSocket, { WebSocketServer } from 'ws';
 
-const app = express();
-const server = require("http").Server(app);
-const ws = require('./ws');
-// const mongo = require('./database');
+console.log("Server started");
+const Msg = '';
 
-const WebSocketServer = require("websocket").server;
-
-app.set("port", 3000)
-app.use(cors());
-app.use(express.json());
-
-app.use(express.static(__dirname));
-// app.use('/', require('./routes'));
-
-const wsServer = new WebSocketServer({
-    httpServer: server,
-    autoAcceptConnections: false
+const wss = new WebSocketServer({
+  port: 3000,
+  perMessageDeflate: {
+    zlibDeflateOptions: {
+      // See zlib defaults.
+      chunkSize: 1024,
+      memLevel: 7,
+      level: 3
+    },
+    zlibInflateOptions: {
+      chunkSize: 10 * 1024
+    },
+    // Other options settable:
+    clientNoContextTakeover: true, // Defaults to negotiated value.
+    serverNoContextTakeover: true, // Defaults to negotiated value.
+    serverMaxWindowBits: 10, // Defaults to negotiated value.
+    // Below options specified as default values.
+    concurrencyLimit: 10, // Limits zlib concurrency for perf.
+    threshold: 1024 // Size (in bytes) below which messages
+    // should not be compressed if context takeover is disabled.
+  }
 });
 
-ws.chat(wsServer);
-
-server.listen(app.get("port"), () => {
-    console.log("Server on port: ", app.get("port"));
-})
+wss.on('connection', function(ws) {
+    ws.on('message', function(message) {
+    console.log('Received from client: %s', message);
+    ws.send('Server received from client: ' + message);
+});
+});
